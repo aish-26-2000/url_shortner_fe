@@ -1,0 +1,206 @@
+<!-- shortener.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestJS Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1em;
+        }
+
+        section {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 8px;
+        }
+
+        input {
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        .message {
+            margin-top: 20px;
+            color: #333;
+        }
+
+        #notification {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        #urlTab {
+            display: none;
+        }
+
+        #urlForm {
+            display: none;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Get Started</h1>
+    </header>
+
+    <section>
+        <div id="urlTab">
+            <form id="urlForm">
+                <label for="longUrl">Enter URL:</label>
+                <input type="url" id="longUrl" name="longUrl" required>
+
+                <button type="button" onclick="shortenUrl()">Shorten URL</button>
+
+                <div id="shortenedUrl" class="shortened-url"></div>
+            </form>
+        </div>
+
+        <div id="urlShortenerSection">
+            <label for="tb">Enter URL Here:</label>
+            <input type="url" id="tb" name="tb" required>
+
+            <button id="shortenButton" onclick="shortenUrl()">Shorten URL</button>
+        </div>
+
+        <section id="shortenedUrlSection" style="display:none">
+            <h2 id="resultHeader">Result: <span id="resultLink"></span></h2>
+        </section>
+
+        <div id="reverseUrlTab">
+            <label for="shortUrl">Enter Short URL Here:</label>
+            <input type="url" id="shortUrl" name="shortUrl" required>
+            <button type="button" onclick="expandShortUrl()">Retrieve Short URL</button>
+        </div>
+
+        <section id="expandedUrlSection" style="display:none">
+            <h2 id="reverseResultHeader">Result: <span id="reverseResultLink"></span></h2>
+        </section>
+
+        <br>
+
+        <button id="logoutBtn" onclick="logout()">Logout</button>
+        <div id="message" class="message"></div>
+
+    </section>
+
+    <script>
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.innerText = message;
+            notification.style.backgroundColor = '#4CAF50'; 
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000); // Hide the notification after 3 seconds
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        async function shortenUrl() {
+            const originalUrlInput = document.getElementById('tb');
+            const shortenedUrlSection = document.getElementById('shortenedUrlSection');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultLink = document.getElementById('resultLink');
+            const token = localStorage.getItem('token');
+
+            const response = await fetch('http://localhost:3000/api/v1/url/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ originalUrl: originalUrlInput.value }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                resultLink.textContent = data.shortUrl;
+                shortenedUrlSection.style.display = 'block';
+            } else {
+                showNotification('Something Wrong Happened. Check Input');
+            }
+        }
+
+        async function expandShortUrl() {
+            const shortUrlInput = document.getElementById('shortUrl');
+            const expandedUrlSection = document.getElementById('expandedUrlSection');
+            const reverserResultHeader = document.getElementById('reverserResultHeader');
+            const reverseResultLink = document.getElementById('reverseResultLink');
+            const token = localStorage.getItem('token');
+
+            const response = await fetch('http://localhost:3000/api/v1/url/retrieve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ shortenedUrl: shortUrlInput.value }),
+            });
+            console.log(response);
+
+            if (response.ok) {
+                const data = await response.json();
+                reverseResultLink.textContent = data.originalUrl;
+                expandedUrlSection.style.display = 'block';
+            } else {
+                showNotification('Something Wrong Happened. Check Input');
+            }
+        }
+
+    </script>
+</body>
+</html>
